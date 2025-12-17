@@ -1,0 +1,42 @@
+# Tooth-AI POC Requirements
+# Generated for reproducibility
+
+# Core ML frameworks
+torch>=2.0.0
+torchvision>=0.15.0
+detectron2 @ git+https://github.com/facebookresearch/detectron2.git
+
+# Image processing
+opencv-python>=4.8.0
+Pillow>=10.0.0
+numpy>=1.24.0
+
+# Model libraries
+timm>=0.9.0
+
+# COCO tools
+pycocotools>=2.0.6
+
+# API & Web
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+streamlit>=1.28.0
+python-multipart>=0.0.6
+pydantic>=2.0.0
+
+# Data handling
+pandas>=2.0.0
+scikit-learn>=1.3.0
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# ONNX & TensorRT (optional)
+# onnx>=1.14.0
+# onnxruntime-gpu>=1.15.0
+# tensorrt>=8.6.0
+
+# Utilities
+tqdm>=4.66.0
+pyyaml>=6.0

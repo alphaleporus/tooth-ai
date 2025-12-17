@@ -1,0 +1,38 @@
+version: '3.8'
+
+# Reproducibility docker-compose for Tooth-AI POC
+# This file is a copy of the main docker-compose.yml for reproducibility
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: tooth-ai:poc
+    container_name: tooth-ai-repro
+    ports:
+      - "8000:8000"
+      - "8501:8501"
+    volumes:
+      - ../models:/app/models:ro
+      - ../tmp:/app/tmp
+      - ../logs:/app/logs
+      - ../feedback:/app/feedback
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - CUDA_VISIBLE_DEVICES=0
+    restart: unless-stopped
+
+networks:
+  default:
+    name: tooth-ai-repro-network
+
+
+

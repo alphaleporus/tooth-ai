@@ -1,0 +1,102 @@
+{
+  "experiment_name": "Tooth-AI POC",
+  "version": "0.1.0-poc",
+  "git_commit": "TBD",
+  "git_repository": "https://github.com/your-org/tooth-ai",
+  "created_date": "2024-11-16",
+  
+  "models": {
+    "maskrcnn": {
+      "path": "models/maskrcnn_final.pth",
+      "checksum_sha256": "TBD",
+      "architecture": "Mask R-CNN ResNet-50 FPN",
+      "input_size": "1024x512",
+      "num_classes": 32,
+      "pretrained_on": "COCO",
+      "training_phases": ["Phase 2", "Phase 3"]
+    },
+    "effnet": {
+      "path": "models/effnet_fdi_final.pth",
+      "checksum_sha256": "TBD",
+      "architecture": "EfficientNet-B0",
+      "input_size": "128x128",
+      "num_classes": 32,
+      "pretrained_on": "ImageNet",
+      "training_phases": ["Phase 4"]
+    }
+  },
+  
+  "configs_used": [
+    "models/config.yaml",
+    "configs/mask_rcnn_1024x512.yaml"
+  ],
+  
+  "dataset": {
+    "name": "Niha Adnan et al. OPG Dataset",
+    "version": "2024",
+    "citation": "Niha Adnan et al., 'Orthopantomogram teeth segmentation and numbering dataset', Data in Brief, 2024",
+    "license": "CC BY-NC 4.0",
+    "format": "COCO instance segmentation",
+    "num_images": "~250 OPG images",
+    "num_classes": 32,
+    "fdi_range": "11-48 (32 teeth)",
+    "conversion_script": "labelme2coco.py"
+  },
+  
+  "phases_completed": [
+    "Phase 0: Environment & baseline replication",
+    "Phase 1: Data conversion & audit",
+    "Phase 2: Baseline Mask R-CNN training",
+    "Phase 3: Resolution & tiling evaluation",
+    "Phase 4: ROI classifier training & FDI correction",
+    "Phase 5: Unified pipeline",
+    "Phase 6: Reliability & validation testing",
+    "Phase 7A: Technical deployment & optimization"
+  ],
+  
+  "final_models": [
+    "maskrcnn_final.pth",
+    "effnet_fdi_final.pth"
+  ],
+  
+  "exported_models": {
+    "onnx": [
+      "export/maskrcnn.onnx",
+      "export/effnet.onnx"
+    ],
+    "tensorrt": [
+      "export/maskrcnn_trt_fp16.plan",
+      "export/effnet_trt_fp16.plan"
+    ]
+  },
+  
+  "performance_metrics": {
+    "mean_mask_iou": "TBD",
+    "mean_fdi_accuracy": "TBD",
+    "validation_stability_score": "TBD",
+    "inference_latency_pytorch_ms": "TBD",
+    "inference_latency_onnx_ms": "TBD",
+    "inference_latency_tensorrt_ms": "TBD"
+  },
+  
+  "reproducibility": {
+    "python_version": "3.10",
+    "pytorch_version": "2.0+",
+    "cuda_version": "11.7+",
+    "detectron2_version": "0.6+",
+    "requirements_file": "repro/requirements.txt",
+    "docker_image": "tooth-ai:poc",
+    "docker_compose_file": "docker-compose.yml"
+  },
+  
+  "notes": [
+    "This is a proof-of-concept (POC) implementation",
+    "Dataset size is limited (~250 images)",
+    "Models trained on single GPU (RTX 3060 or similar)",
+    "For production use, larger dataset and multi-GPU training recommended",
+    "All code is MIT licensed, dataset is CC BY-NC 4.0"
+  ]
+}
+
+
+

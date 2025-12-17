@@ -1,0 +1,62 @@
+MODEL:
+  WEIGHTS: "detectron2://COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x/137849600/model_final_f10217.pkl"
+  MASK_ON: True
+  BACKBONE:
+    FREEZE_AT: 2
+  ROI_HEADS:
+    NAME: "StandardROIHeads"
+    NUM_CLASSES: 32  # 32 teeth (FDI 11-48 or 1-32), background is implicit in Detectron2
+    SCORE_THRESH_TEST: 0.5
+  ROI_BOX_HEAD:
+    NAME: "FastRCNNConvFCHead"
+    NUM_FC: 2
+    POOLER_RESOLUTION: 7
+  ROI_MASK_HEAD:
+    NAME: "MaskRCNNConvUpsampleHead"
+    NUM_CONV: 4
+    POOLER_RESOLUTION: 14
+
+INPUT:
+  MIN_SIZE_TRAIN: (512,)
+  MAX_SIZE_TRAIN: 512
+  MIN_SIZE_TEST: 512
+  MAX_SIZE_TEST: 512
+  CROP:
+    ENABLED: False
+
+DATASETS:
+  TRAIN: ("tooth_train",)
+  TEST: ("tooth_val",)
+
+SOLVER:
+  IMS_PER_BATCH: 2
+  BASE_LR: 0.00025
+  MOMENTUM: 0.9
+  WEIGHT_DECAY: 0.0001
+  GAMMA: 0.1
+  STEPS: (3000, 6000)
+  MAX_ITER: 9000
+  WARMUP_ITERS: 500
+  WARMUP_FACTOR: 0.001
+  WARMUP_METHOD: "linear"
+  CHECKPOINT_PERIOD: 2000
+  EVAL_PERIOD: 1000
+
+DATALOADER:
+  NUM_WORKERS: 4
+  ASPECT_RATIO_GROUPING: True
+  SAMPLER_TRAIN: "TrainingSampler"
+
+AUGMENTATION:
+  TRAIN:
+    - "ResizeShortestEdge"
+    - "RandomFlip"
+    - "RandomBrightness"
+    - "RandomContrast"
+
+OUTPUT_DIR: "workspace/phase3/exp_512"
+
+VERSION: 2
+
+
+

@@ -1,0 +1,372 @@
+{
+  "summary": {
+    "total_samples": 50,
+    "suspicious_samples": 4,
+    "suspicious_percentage": 8.0,
+    "total_issues": 8
+  },
+  "results": [
+    {
+      "filename": "12.png",
+      "issues": [],
+      "mask_count": 28,
+      "avg_mask_area": 16257.762390670523,
+      "suspicious": false
+    },
+    {
+      "filename": "952.jpg",
+      "issues": [],
+      "mask_count": 24,
+      "avg_mask_area": 6533.377604166667,
+      "suspicious": false
+    },
+    {
+      "filename": "504.jpg",
+      "issues": [],
+      "mask_count": 22,
+      "avg_mask_area": 6142.835227272727,
+      "suspicious": false
+    },
+    {
+      "filename": "137.png",
+      "issues": [],
+      "mask_count": 21,
+      "avg_mask_area": 18007.489802419623,
+      "suspicious": false
+    },
+    {
+      "filename": "844.jpg",
+      "issues": [],
+      "mask_count": 30,
+      "avg_mask_area": 6412.366666666667,
+      "suspicious": false
+    },
+    {
+      "filename": "672.jpg",
+      "issues": [],
+      "mask_count": 24,
+      "avg_mask_area": 4529.083333333333,
+      "suspicious": false
+    },
+    {
+      "filename": "919.jpg",
+      "issues": [],
+      "mask_count": 27,
+      "avg_mask_area": 6133.342592592592,
+      "suspicious": false
+    },
+    {
+      "filename": "963.jpg",
+      "issues": [],
+      "mask_count": 32,
+      "avg_mask_area": 6005.125,
+      "suspicious": false
+    },
+    {
+      "filename": "117.png",
+      "issues": [],
+      "mask_count": 32,
+      "avg_mask_area": 20778.42848749407,
+      "suspicious": false
+    },
+    {
+      "filename": "745.jpg",
+      "issues": [],
+      "mask_count": 27,
+      "avg_mask_area": 6568.1285083912035,
+      "suspicious": false
+    },
+    {
+      "filename": "72.png",
+      "issues": [],
+      "mask_count": 32,
+      "avg_mask_area": 13599.353495639916,
+      "suspicious": false
+    },
+    {
+      "filename": "39.png",
+      "issues": [
+        "Width mismatch: COCO=2440, actual=2744",
+        "Height mismatch: COCO=1292, actual=1332"
+      ],
+      "mask_count": 32,
+      "avg_mask_area": 15142.392860898652,
+      "suspicious": true
+    },
+    {
+      "filename": "190.png",
+      "issues": [],
+      "mask_count": 32,
+      "avg_mask_area": 14289.43359375,
+      "suspicious": false
+    },
+    {
+      "filename": "47.png",
+      "issues": [],
+      "mask_count": 24,
+      "avg_mask_area": 18489.75340136054,
+      "suspicious": false
+    },
+    {
+      "filename": "753.jpg",
+      "issues": [],
+      "mask_count": 4,
+      "avg_mask_area": 5510.03125,
+      "suspicious": false
+    },
+    {
+      "filename": "27.png",
+      "issues": [],
+      "mask_count": 14,
+      "avg_mask_area": 13611.516034985385,
+      "suspicious": false
+    },
+    {
+      "filename": "927.jpg",
+      "issues": [],
+      "mask_count": 28,
+      "avg_mask_area": 6510.866071428572,
+      "suspicious": false
+    },
+    {
+      "filename": "553.jpg",
+      "issues": [],
+      "mask_count": 21,
+      "avg_mask_area": 5122.130952380952,
+      "suspicious": false
+    },
+    {
+      "filename": "380.jpg",
+      "issues": [],
+      "mask_count": 27,
+      "avg_mask_area": 6577.912037037037,
+      "suspicious": false
+    },
+    {
+      "filename": "641.jpg",
+      "issues": [],
+      "mask_count": 22,
+      "avg_mask_area": 5169.892045454545,
+      "suspicious": false
+    },
+    {
+      "filename": "333.jpg",
+      "issues": [],
+      "mask_count": 29,
+      "avg_mask_area": 5204.297413793103,
+      "suspicious": false
+    },
+    {
+      "filename": "536.jpg",
+      "issues": [],
+      "mask_count": 17,
+      "avg_mask_area": 7831.257352941177,
+      "suspicious": false
+    },
+    {
+      "filename": "135.png",
+      "issues": [],
+      "mask_count": 29,
+      "avg_mask_area": 15341.085612080771,
+      "suspicious": false
+    },
+    {
+      "filename": "1.png",
+      "issues": [],
+      "mask_count": 30,
+      "avg_mask_area": 23191.401037551583,
+      "suspicious": false
+    },
+    {
+      "filename": "141.png",
+      "issues": [
+        "Width mismatch: COCO=2648, actual=2760",
+        "Height mismatch: COCO=1292, actual=1334"
+      ],
+      "mask_count": 32,
+      "avg_mask_area": 16058.08984375,
+      "suspicious": true
+    },
+    {
+      "filename": "105.png",
+      "issues": [],
+      "mask_count": 28,
+      "avg_mask_area": 15673.947487550971,
+      "suspicious": false
+    },
+    {
+      "filename": "542.jpg",
+      "issues": [],
+      "mask_count": 25,
+      "avg_mask_area": 5326.83,
+      "suspicious": false
+    },
+    {
+      "filename": "63.png",
+      "issues": [],
+      "mask_count": 31,
+      "avg_mask_area": 18493.21619962577,
+      "suspicious": false
+    },
+    {
+      "filename": "65.png",
+      "issues": [],
+      "mask_count": 22,
+      "avg_mask_area": 14729.719387755096,
+      "suspicious": false
+    },
+    {
+      "filename": "91.png",
+      "issues": [],
+      "mask_count": 30,
+      "avg_mask_area": 20118.372888746388,
+      "suspicious": false
+    },
+    {
+      "filename": "193.jpg",
+      "issues": [],
+      "mask_count": 32,
+      "avg_mask_area": 16260.723428918292,
+      "suspicious": false
+    },
+    {
+      "filename": "1011.jpg",
+      "issues": [],
+      "mask_count": 28,
+      "avg_mask_area": 8714.573556082589,
+      "suspicious": false
+    },
+    {
+      "filename": "276.jpg",
+      "issues": [],
+      "mask_count": 29,
+      "avg_mask_area": 6432.0905172413795,
+      "suspicious": false
+    },
+    {
+      "filename": "784.jpg",
+      "issues": [],
+      "mask_count": 32,
+      "avg_mask_area": 6753.253265380859,
+      "suspicious": false
+    },
+    {
+      "filename": "128.png",
+      "issues": [],
+      "mask_count": 21,
+      "avg_mask_area": 18179.335442189586,
+      "suspicious": false
+    },
+    {
+      "filename": "852.jpg",
+      "issues": [],
+      "mask_count": 28,
+      "avg_mask_area": 5823.496791294643,
+      "suspicious": false
+    },
+    {
+      "filename": "58.png",
+      "issues": [],
+      "mask_count": 24,
+      "avg_mask_area": 17158.92959607663,
+      "suspicious": false
+    },
+    {
+      "filename": "545.jpg",
+      "issues": [],
+      "mask_count": 27,
+      "avg_mask_area": 6718.6646412037035,
+      "suspicious": false
+    },
+    {
+      "filename": "42.png",
+      "issues": [],
+      "mask_count": 31,
+      "avg_mask_area": 18350.28922658329,
+      "suspicious": false
+    },
+    {
+      "filename": "141.png",
+      "issues": [],
+      "mask_count": 29,
+      "avg_mask_area": 20075.187351986657,
+      "suspicious": false
+    },
+    {
+      "filename": "847.jpg",
+      "issues": [],
+      "mask_count": 28,
+      "avg_mask_area": 5128.928571428572,
+      "suspicious": false
+    },
+    {
+      "filename": "52.png",
+      "issues": [],
+      "mask_count": 28,
+      "avg_mask_area": 16958.80102040817,
+      "suspicious": false
+    },
+    {
+      "filename": "85.png",
+      "issues": [],
+      "mask_count": 31,
+      "avg_mask_area": 13695.932929022354,
+      "suspicious": false
+    },
+    {
+      "filename": "992.jpg",
+      "issues": [],
+      "mask_count": 28,
+      "avg_mask_area": 7033.926130022322,
+      "suspicious": false
+    },
+    {
+      "filename": "62.png",
+      "issues": [],
+      "mask_count": 30,
+      "avg_mask_area": 20878.232909964576,
+      "suspicious": false
+    },
+    {
+      "filename": "563.jpg",
+      "issues": [],
+      "mask_count": 26,
+      "avg_mask_area": 5651.544771634615,
+      "suspicious": false
+    },
+    {
+      "filename": "67.png",
+      "issues": [
+        "Width mismatch: COCO=2440, actual=2744",
+        "Height mismatch: COCO=1292, actual=1332"
+      ],
+      "mask_count": 29,
+      "avg_mask_area": 12604.258620689656,
+      "suspicious": true
+    },
+    {
+      "filename": "54.png",
+      "issues": [],
+      "mask_count": 32,
+      "avg_mask_area": 18036.16071428569,
+      "suspicious": false
+    },
+    {
+      "filename": "750.jpg",
+      "issues": [],
+      "mask_count": 28,
+      "avg_mask_area": 6019.30974469866,
+      "suspicious": false
+    },
+    {
+      "filename": "64.png",
+      "issues": [
+        "Width mismatch: COCO=2440, actual=2736",
+        "Height mismatch: COCO=1292, actual=1332"
+      ],
+      "mask_count": 32,
+      "avg_mask_area": 15673.933567176871,
+      "suspicious": true
+    }
+  ]
+}

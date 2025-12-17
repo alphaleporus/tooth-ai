@@ -1,0 +1,15 @@
+MODEL PLACEHOLDER
+
+This directory should contain:
+- maskrcnn_final.pth (Mask R-CNN trained model)
+- effnet_fdi_final.pth (EfficientNet classifier model)
+- config.yaml (Detectron2 configuration)
+
+To obtain models:
+1. Train models in Phase 3 (Mask R-CNN) and Phase 4 (EfficientNet)
+2. Copy trained models:
+   cp workspace/phase3/exp_1024/model_1024_final.pth workspace/tooth-ai/models/maskrcnn_final.pth
+   cp workspace/phase4/effnet_fdi_best.pth workspace/tooth-ai/models/effnet_fdi_final.pth
+   cp workspace/configs/mask_rcnn_1024x512.yaml workspace/tooth-ai/models/config.yaml
+
+WARNING: Inference will fail without actual model files.
