@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Training script for Mask R-CNN on tooth detection dataset.
-Uses Detectron2 with wandb integration for experiment tracking.
+Uses Detectron2 with wandb integration and custom augmentations.
 """
 
 import argparse
@@ -15,27 +15,41 @@ from detectron2.config import get_cfg
 from detectron2.engine import DefaultTrainer, default_argument_parser, default_setup, launch
 from detectron2.utils.logger import setup_logger
 from detectron2 import model_zoo
+from detectron2.data import DatasetMapper, build_detection_train_loader
+from detectron2.data import transforms as T
 
 # Import dataset registration
-from register_dataset import register_tooth_dataset
+from register_dataset import register_final_di_datasets, get_augmentation_config
 
 
-class WandbTrainer(DefaultTrainer):
-    """Custom trainer with wandb logging."""
+class AugmentedTrainer(DefaultTrainer):
+    """Custom trainer with data augmentation and optional wandb logging."""
     
-    def __init__(self, cfg, wandb_project="tooth-poc", wandb_name=None):
+    def __init__(self, cfg, wandb_project=None, wandb_name=None):
         super().__init__(cfg)
         self.wandb_initialized = False
         self.wandb_project = wandb_project
         self.wandb_name = wandb_name
     
+    @classmethod
+    def build_train_loader(cls, cfg):
+        """Build train loader with custom augmentations."""
+        # Get augmentations
+        augmentations = get_augmentation_config()
+        
+        mapper = DatasetMapper(
+            cfg,
+            is_train=True,
+            augmentations=augmentations
+        )
+        
+        return build_detection_train_loader(cfg, mapper=mapper)
+    
     def run_step(self):
-        """
-        Override to add wandb logging.
-        """
+        """Override to add wandb logging."""
         loss_dict = super().run_step()
         
-        if not self.wandb_initialized:
+        if self.wandb_project and not self.wandb_initialized:
             wandb.init(
                 project=self.wandb_project,
                 name=self.wandb_name or self.cfg.OUTPUT_DIR.split('/')[-1],
@@ -44,8 +58,8 @@ class WandbTrainer(DefaultTrainer):
             )
             self.wandb_initialized = True
         
-        # Log losses
-        if self.iter % 20 == 0:  # Log every 20 iterations
+        # Log losses every 20 iterations
+        if self.wandb_initialized and self.iter % 20 == 0:
             log_dict = {}
             for key, value in loss_dict.items():
                 log_dict[f"loss/{key}"] = value.item() if torch.is_tensor(value) else value
@@ -55,55 +69,38 @@ class WandbTrainer(DefaultTrainer):
         
         return loss_dict
     
-    def after_step(self):
-        """
-        Log metrics after each step.
-        """
-        super().after_step()
-        
-        if self.iter % self.cfg.SOLVER.CHECKPOINT_PERIOD == 0:
-            # Log checkpoint info
-            wandb.log({"checkpoint/iter": self.iter})
-    
     def after_train(self):
-        """
-        Finalize wandb run after training.
-        """
+        """Finalize wandb run after training."""
         super().after_train()
         if self.wandb_initialized:
             wandb.finish()
 
 
 def setup(args):
-    """
-    Create configs and perform basic setups.
-    """
+    """Create configs and perform basic setups."""
     cfg = get_cfg()
     
-    # Load base config from model zoo first
-    cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"))
+    # Load base config from model zoo
+    cfg.merge_from_file(model_zoo.get_config_file(
+        "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"
+    ))
     
-    # Then override with custom config file
+    # Override with custom config file
     if args.config_file:
         cfg.merge_from_file(args.config_file)
     
-    # Override with custom settings
+    # Override with command line options
     if args.opts:
         cfg.merge_from_list(args.opts)
     
-    # Register datasets if not already registered
+    # Register datasets
     try:
         from detectron2.data import DatasetCatalog
         if "tooth_train" not in DatasetCatalog.list():
-            # Register datasets
-            coco_json = args.coco_json or "/data/niihhaa/coco_annotations.json"
-            image_dir = args.image_dir or "/data/niihhaa/dataset"
-            
-            register_tooth_dataset(coco_json, image_dir, "tooth_train", split_ratio=0.8)
-            register_tooth_dataset(coco_json, image_dir, "tooth_val", split_ratio=0.8)
+            register_final_di_datasets(args.base_path)
     except Exception as e:
         print(f"Warning: Could not register datasets: {e}")
-        print("Make sure to run register_dataset.py first or provide --coco-json and --image-dir")
+        print("Make sure data/final-di exists with train/valid/test splits")
     
     cfg.freeze()
     default_setup(cfg, args)
@@ -111,48 +108,52 @@ def setup(args):
 
 
 def main(args):
-    """
-    Main training function.
-    """
+    """Main training function."""
     cfg = setup(args)
     
     # Create output directory
     os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
     
-    # Initialize wandb
-    wandb_name = args.wandb_name or f"maskrcnn_r50_nh_{cfg.SOLVER.MAX_ITER}iter"
+    # Create trainer with optional wandb
+    wandb_project = args.wandb_project if args.use_wandb else None
+    wandb_name = args.wandb_name
     
-    # Create trainer
-    trainer = WandbTrainer(cfg, wandb_project=args.wandb_project, wandb_name=wandb_name)
+    trainer = AugmentedTrainer(cfg, wandb_project=wandb_project, wandb_name=wandb_name)
     
     # Resume from checkpoint if provided
-    if args.resume:
-        trainer.resume_or_load(resume=True)
-    else:
-        trainer.resume_or_load(resume=False)
+    trainer.resume_or_load(resume=args.resume)
     
-    # Start training
+    # Log augmentation info
+    print("\n" + "="*50)
+    print("TRAINING WITH AUGMENTATIONS:")
+    print("  - Multi-scale resize (480-608)")
+    print("  - Random horizontal flip (p=0.5)")
+    print("  - Random brightness (0.8-1.2)")
+    print("  - Random contrast (0.8-1.2)")
+    print("  - Random saturation (0.8-1.2)")
+    print("  - Random rotation (±10°)")
+    print("="*50 + "\n")
+    
     return trainer.train()
 
 
 if __name__ == "__main__":
     parser = default_argument_parser()
     parser.add_argument(
-        "--coco-json",
+        "--base-path",
         type=str,
         default=None,
-        help="Path to COCO JSON annotations file"
+        help="Base path to project root"
     )
     parser.add_argument(
-        "--image-dir",
-        type=str,
-        default=None,
-        help="Directory containing images"
+        "--use-wandb",
+        action="store_true",
+        help="Enable wandb logging"
     )
     parser.add_argument(
         "--wandb-project",
         type=str,
-        default="tooth-poc",
+        default="tooth-ai",
         help="wandb project name"
     )
     parser.add_argument(
@@ -161,19 +162,12 @@ if __name__ == "__main__":
         default=None,
         help="wandb run name"
     )
-    parser.add_argument(
-        "--num-gpus",
-        type=int,
-        default=1,
-        help="Number of GPUs to use"
-    )
     
     args = parser.parse_args()
     
-    # Setup logger
     setup_logger()
     
-    # Launch training (single GPU for now)
+    # Launch training
     if args.num_gpus == 1:
         main(args)
     else:
@@ -185,4 +179,3 @@ if __name__ == "__main__":
             dist_url=args.dist_url,
             args=(args,),
         )
-
