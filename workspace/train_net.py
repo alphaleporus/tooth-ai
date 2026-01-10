@@ -47,7 +47,7 @@ class AugmentedTrainer(DefaultTrainer):
     
     def run_step(self):
         """Override to add wandb logging."""
-        loss_dict = super().run_step()
+        super().run_step()
         
         if self.wandb_project and not self.wandb_initialized:
             wandb.init(
@@ -60,14 +60,17 @@ class AugmentedTrainer(DefaultTrainer):
         
         # Log losses every 20 iterations
         if self.wandb_initialized and self.iter % 20 == 0:
-            log_dict = {}
-            for key, value in loss_dict.items():
-                log_dict[f"loss/{key}"] = value.item() if torch.is_tensor(value) else value
-            log_dict["iter"] = self.iter
-            log_dict["lr"] = self.optimizer.param_groups[0]['lr']
+            # Get losses from storage (not from return value)
+            storage = self.storage
+            log_dict = {
+                "iter": self.iter,
+                "lr": self.optimizer.param_groups[0]['lr']
+            }
+            # Access the latest scalars from storage
+            for key in storage.latest().keys():
+                if "loss" in key:
+                    log_dict[f"loss/{key}"] = storage.latest()[key][0]
             wandb.log(log_dict)
-        
-        return loss_dict
     
     def after_train(self):
         """Finalize wandb run after training."""

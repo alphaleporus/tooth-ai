@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 """
-Local Testing Script for MacBook M1
+Local Testing Script for MacBook M1 / Windows
 Tests dataset loading, model config, and a few training iterations.
 Works without GPU using CPU/MPS backend.
 """
 
 import os
 import sys
+
+# ASCII-safe symbols for Windows console compatibility
+OK = "[OK]"
+FAIL = "[FAIL]"
+WARN = "[WARN]"
 
 def check_dependencies():
     """Check all required dependencies."""
@@ -29,22 +34,24 @@ def check_dependencies():
         try:
             if module == 'cv2':
                 import cv2
-                print(f"✓ {name}")
+                print(f"{OK} {name}")
             else:
                 mod = __import__(module)
                 version = getattr(mod, '__version__', 'unknown')
-                print(f"✓ {name} ({version})")
+                print(f"{OK} {name} ({version})")
         except ImportError:
-            print(f"✗ {name} - NOT INSTALLED")
+            print(f"{FAIL} {name} - NOT INSTALLED")
             all_ok = False
     
-    # Check MPS (Apple Silicon) availability
+    # Check MPS (Apple Silicon) or CUDA availability
     try:
         import torch
-        if torch.backends.mps.is_available():
-            print(f"✓ MPS (Apple Silicon GPU) available")
+        if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+            print(f"{OK} MPS (Apple Silicon GPU) available")
+        elif torch.cuda.is_available():
+            print(f"{OK} CUDA available")
         else:
-            print(f"⚠ MPS not available, will use CPU")
+            print(f"{WARN} No GPU available, will use CPU")
     except:
         pass
     
@@ -68,9 +75,9 @@ def check_dataset():
         if os.path.exists(json_path):
             with open(json_path) as f:
                 data = json.load(f)
-            print(f"✓ {split}: {len(data['images'])} images, {len(data['categories'])} classes")
+            print(f"{OK} {split}: {len(data['images'])} images, {len(data['categories'])} classes")
         else:
-            print(f"✗ {split}: NOT FOUND at {json_path}")
+            print(f"{FAIL} {split}: NOT FOUND at {json_path}")
             all_ok = False
     
     return all_ok
@@ -85,14 +92,14 @@ def check_wandb():
     try:
         import wandb
         if wandb.api.api_key:
-            print("✓ WandB logged in")
+            print(f"{OK} WandB logged in")
             return True
         else:
-            print("✗ WandB NOT logged in")
+            print(f"{FAIL} WandB NOT logged in")
             print("  Run: wandb login")
             return False
     except Exception as e:
-        print(f"✗ WandB error: {e}")
+        print(f"{FAIL} WandB error: {e}")
         return False
 
 
@@ -104,7 +111,7 @@ def check_config():
     
     config_path = 'workspace/configs/mask_rcnn_1024x512.yaml'
     if not os.path.exists(config_path):
-        print(f"✗ Config not found: {config_path}")
+        print(f"{FAIL} Config not found: {config_path}")
         return False
     
     with open(config_path) as f:
@@ -112,16 +119,16 @@ def check_config():
     
     checks = {
         'NUM_CLASSES: 41': '41 classes',
-        'MAX_ITER: 24000': '24K iterations',
-        'IMS_PER_BATCH: 4': 'Batch size 4'
+        'MAX_ITER: 48000': '48K iterations',
+        'IMS_PER_BATCH: 2': 'Batch size 2'
     }
     
     all_ok = True
     for pattern, desc in checks.items():
         if pattern in content:
-            print(f"✓ {desc}")
+            print(f"{OK} {desc}")
         else:
-            print(f"✗ {desc} - NOT FOUND")
+            print(f"{FAIL} {desc} - NOT FOUND")
             all_ok = False
     
     return all_ok
@@ -142,15 +149,15 @@ def test_model_init():
             "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"
         ))
         cfg.MODEL.ROI_HEADS.NUM_CLASSES = 41
-        cfg.MODEL.DEVICE = 'cpu'  # Force CPU for M1
+        cfg.MODEL.DEVICE = 'cpu'  # Force CPU for local testing
         
-        print("✓ Config loaded successfully")
+        print(f"{OK} Config loaded successfully")
         print(f"  Classes: {cfg.MODEL.ROI_HEADS.NUM_CLASSES}")
         print(f"  Device: {cfg.MODEL.DEVICE}")
         return True
         
     except Exception as e:
-        print(f"✗ Model init failed: {e}")
+        print(f"{FAIL} Model init failed: {e}")
         return False
 
 
@@ -164,7 +171,7 @@ def test_dataset_registration():
         sys.path.insert(0, 'workspace')
         from register_dataset import register_final_di_datasets, FINAL_DI_CLASSES
         
-        print(f"✓ Register module loaded")
+        print(f"{OK} Register module loaded")
         print(f"  Classes defined: {len(FINAL_DI_CLASSES)}")
         
         # Try registration
@@ -175,21 +182,21 @@ def test_dataset_registration():
         for name in ['tooth_train', 'tooth_val', 'tooth_test']:
             if name in DatasetCatalog.list():
                 dicts = DatasetCatalog.get(name)
-                print(f"✓ {name}: {len(dicts)} samples")
+                print(f"{OK} {name}: {len(dicts)} samples")
             else:
-                print(f"✗ {name}: not registered")
+                print(f"{FAIL} {name}: not registered")
         
         return True
         
     except Exception as e:
-        print(f"✗ Registration failed: {e}")
+        print(f"{FAIL} Registration failed: {e}")
         return False
 
 
 def main():
     print("\n" + "=" * 50)
     print("TOOTH-AI LOCAL TEST SUITE")
-    print("MacBook M1 Compatibility Check")
+    print("Local Environment Compatibility Check")
     print("=" * 50)
     
     results = {}
@@ -204,7 +211,7 @@ def main():
         results['model'] = test_model_init()
         results['registration'] = test_dataset_registration()
     else:
-        print("\n⚠ Skipping further tests - install dependencies first")
+        print(f"\n{WARN} Skipping further tests - install dependencies first")
     
     # Summary
     print("\n" + "=" * 50)
@@ -213,13 +220,13 @@ def main():
     
     all_pass = all(results.values())
     for test, passed in results.items():
-        status = "✓ PASS" if passed else "✗ FAIL"
+        status = f"{OK} PASS" if passed else f"{FAIL} FAIL"
         print(f"  {test}: {status}")
     
     if all_pass:
-        print("\n🎉 All checks passed! Ready for training.")
+        print("\n*** All checks passed! Ready for training. ***")
     else:
-        print("\n⚠ Some checks failed. See above for details.")
+        print(f"\n{WARN} Some checks failed. See above for details.")
     
     return 0 if all_pass else 1
 

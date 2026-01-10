@@ -60,20 +60,15 @@ def get_augmentation_config():
 
 def register_final_di_datasets(base_path: str = None):
     """Register the final-di dataset with Detectron2."""
-    train_json = TRAIN_JSON
-    train_images = TRAIN_IMAGES
-    val_json = VAL_JSON
-    val_images = VAL_IMAGES
-    test_json = TEST_JSON
-    test_images = TEST_IMAGES
+    # Use provided base_path or default DATASET_ROOT
+    dataset_root = base_path if base_path else DATASET_ROOT
     
-    if base_path:
-        train_json = os.path.join(base_path, TRAIN_JSON)
-        train_images = os.path.join(base_path, TRAIN_IMAGES)
-        val_json = os.path.join(base_path, VAL_JSON)
-        val_images = os.path.join(base_path, VAL_IMAGES)
-        test_json = os.path.join(base_path, TEST_JSON)
-        test_images = os.path.join(base_path, TEST_IMAGES)
+    train_json = os.path.join(dataset_root, "train", "_annotations.coco.json")
+    train_images = os.path.join(dataset_root, "train")
+    val_json = os.path.join(dataset_root, "valid", "_annotations.coco.json")
+    val_images = os.path.join(dataset_root, "valid")
+    test_json = os.path.join(dataset_root, "test", "_annotations.coco.json")
+    test_images = os.path.join(dataset_root, "test")
     
     registered = DatasetCatalog.list()
     
