@@ -1,25 +1,58 @@
-# Virtual environment
-venv/
+# ============================================
+# Tooth-AI .gitignore - Deployment Ready
+# ============================================
 
-# Python cache
+# === VIRTUAL ENVIRONMENTS ===
+venv/
+.venv/
+env/
+
+# === PYTHON CACHE ===
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
+.Python
+*.so
 
-# Output and checkpoints
-output/
-*.pth
+# === DATASET (Large - 2GB+) ===
+data/
+*.jpg
+*.jpeg
+*.png
+*.bmp
 
-# WandB
+# === WANDB LOGS (10GB+) ===
 wandb/
 
-# IDE
+# === TEMPORARY & BACKUP ===
+*.bak
+*.tmp
+*.log
+*.swp
+
+# === IDE ===
 .vscode/
 .idea/
+*.code-workspace
 
-# OS files
+# === OS FILES ===
 .DS_Store
 Thumbs.db
+Desktop.ini
 
-# Backup files
-*.bak
+# === BUILD ARTIFACTS ===
+build/
+dist/
+*.egg-info/
+
+# === CHECKPOINTS (except final) ===
+# We use Git LFS for model_final.pth
+output/*/model_*.pth
+!output/*/model_final.pth
+output/*/last_checkpoint
+output/*/events.out.*
+output/inference/
+
+# === ANNOTATIONS BACKUP ===
+*_annotations.coco.json.bak
