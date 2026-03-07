@@ -1,0 +1,137 @@
+# ============================================
+# SOTA Configuration: Cascade Mask R-CNN R101-FPN
+# Target Hardware: RTX 4060 (8GB VRAM)
+# Expected Training Time: 8-10 hours
+# ============================================
+
+MODEL:
+  META_ARCHITECTURE: "GeneralizedRCNN"
+  
+  # Pre-trained weights from Detectron2 Model Zoo
+  WEIGHTS: "detectron2://COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x/138205316/model_final_a3ec72.pkl"
+  
+  MASK_ON: True
+  PIXEL_MEAN: [103.530, 116.280, 123.675]
+  PIXEL_STD: [1.0, 1.0, 1.0]
+  
+  # Backbone: ResNet-101-FPN
+  BACKBONE:
+    NAME: "build_resnet_fpn_backbone"
+    FREEZE_AT: 2
+  
+  RESNETS:
+    DEPTH: 101
+    OUT_FEATURES: ["res2", "res3", "res4", "res5"]
+    NORM: "FrozenBN"
+    STRIDE_IN_1X1: True
+  
+  FPN:
+    IN_FEATURES: ["res2", "res3", "res4", "res5"]
+    OUT_CHANNELS: 256
+  
+  # RPN Configuration
+  RPN:
+    IN_FEATURES: ["p2", "p3", "p4", "p5", "p6"]
+    PRE_NMS_TOPK_TRAIN: 2000
+    PRE_NMS_TOPK_TEST: 1000
+    POST_NMS_TOPK_TRAIN: 1000
+    POST_NMS_TOPK_TEST: 1000
+  
+  # Anchor settings
+  ANCHOR_GENERATOR:
+    SIZES: [[32], [64], [128], [256], [512]]
+    ASPECT_RATIOS: [[0.5, 1.0, 2.0]]
+  
+  # Cascade ROI Heads (3-stage refinement)
+  ROI_HEADS:
+    NAME: "CascadeROIHeads"
+    IN_FEATURES: ["p2", "p3", "p4", "p5"]
+    NUM_CLASSES: 41
+    SCORE_THRESH_TEST: 0.5
+    NMS_THRESH_TEST: 0.5
+    BATCH_SIZE_PER_IMAGE: 128
+    POSITIVE_FRACTION: 0.25
+  
+  # Cascade IoU thresholds (progressively stricter)
+  ROI_BOX_CASCADE_HEAD:
+    IOUS: [0.5, 0.6, 0.7]
+    
+  ROI_BOX_HEAD:
+    NAME: "FastRCNNConvFCHead"
+    NUM_FC: 2
+    FC_DIM: 1024
+    POOLER_RESOLUTION: 7
+    POOLER_SAMPLING_RATIO: 0
+    POOLER_TYPE: "ROIAlignV2"
+    # REQUIRED for Cascade R-CNN
+    CLS_AGNOSTIC_BBOX_REG: True
+    
+  ROI_MASK_HEAD:
+    NAME: "MaskRCNNConvUpsampleHead"
+    NUM_CONV: 4
+    CONV_DIM: 256
+    POOLER_RESOLUTION: 14
+    POOLER_SAMPLING_RATIO: 0
+    POOLER_TYPE: "ROIAlignV2"
+
+# ============================================
+# INPUT CONFIGURATION
+# ============================================
+INPUT:
+  MIN_SIZE_TRAIN: (480, 512, 544, 576, 608)
+  MAX_SIZE_TRAIN: 1024
+  MIN_SIZE_TEST: 544
+  MAX_SIZE_TEST: 1024
+  FORMAT: "BGR"
+
+# ============================================
+# DATASET CONFIGURATION
+# ============================================
+DATASETS:
+  TRAIN: ("tooth_train",)
+  TEST: ("tooth_val",)
+
+# ============================================
+# SOLVER CONFIGURATION
+# ============================================
+SOLVER:
+  IMS_PER_BATCH: 2
+  BASE_LR: 0.0005
+  MOMENTUM: 0.9
+  WEIGHT_DECAY: 0.0001
+  GAMMA: 0.1
+  STEPS: (50000, 65000)
+  MAX_ITER: 70000
+  WARMUP_ITERS: 1000
+  WARMUP_FACTOR: 0.001
+  WARMUP_METHOD: "linear"
+  CHECKPOINT_PERIOD: 5000
+  
+  # CRITICAL: Enable AMP for 8GB VRAM
+  AMP:
+    ENABLED: true
+
+# ============================================
+# DATALOADER CONFIGURATION
+# ============================================
+DATALOADER:
+  NUM_WORKERS: 2
+  ASPECT_RATIO_GROUPING: True
+  # RepeatFactor sampler for rare class oversampling
+  SAMPLER_TRAIN: "RepeatFactorTrainingSampler"
+  REPEAT_THRESHOLD: 0.001
+
+# ============================================
+# TEST CONFIGURATION
+# Validation runs every 5000 iters and logs to WandB
+# ============================================
+TEST:
+  EVAL_PERIOD: 5000
+  DETECTIONS_PER_IMAGE: 100
+
+# ============================================
+# OUTPUT
+# ============================================
+OUTPUT_DIR: "output/cascade_r101_70k"
+
+VERSION: 2

@@ -17,9 +17,10 @@ from detectron2.utils.logger import setup_logger
 from detectron2 import model_zoo
 from detectron2.data import DatasetMapper, build_detection_train_loader
 from detectron2.data import transforms as T
+from detectron2.evaluation import COCOEvaluator
 
 # Import dataset registration
-from register_dataset import register_final_di_datasets, get_augmentation_config
+from register_dataset import register_final_di_datasets, register_remapped_datasets, register_merged_datasets, get_augmentation_config
 
 
 class AugmentedTrainer(DefaultTrainer):
@@ -33,7 +34,27 @@ class AugmentedTrainer(DefaultTrainer):
     
     @classmethod
     def build_train_loader(cls, cfg):
-        """Build train loader with custom augmentations."""
+        """
+        Build train loader with custom augmentations and oversampling for rare classes.
+        
+        Implements Phase 2 fix for class imbalance:
+        - Oversamples images containing rare classes (implant, caries, root_canal_filling, etc.)
+        - Uses RepeatFactorTrainingSampler to ensure model sees minority classes frequently
+        """
+        from detectron2.data import DatasetCatalog, MetadataCatalog
+        from detectron2.data.samplers import RepeatFactorTrainingSampler
+        from detectron2.data.build import get_detection_dataset_dicts
+        
+        # Get dataset dicts
+        dataset_name = cfg.DATASETS.TRAIN[0]
+        dataset_dicts = get_detection_dataset_dicts(
+            cfg.DATASETS.TRAIN,
+            filter_empty=cfg.DATALOADER.FILTER_EMPTY_ANNOTATIONS,
+            min_keypoints=cfg.MODEL.ROI_KEYPOINT_HEAD.MIN_KEYPOINTS_PER_IMAGE
+            if cfg.MODEL.KEYPOINT_ON else 0,
+            proposal_files=cfg.DATASETS.PROPOSAL_FILES_TRAIN if cfg.MODEL.LOAD_PROPOSALS else None,
+        )
+        
         # Get augmentations
         augmentations = get_augmentation_config()
         
@@ -43,7 +64,51 @@ class AugmentedTrainer(DefaultTrainer):
             augmentations=augmentations
         )
         
-        return build_detection_train_loader(cfg, mapper=mapper)
+        # ============================================
+        # CRITICAL FIX: RepeatFactorTrainingSampler
+        # ============================================
+        # Oversample images containing rare classes
+        # This ensures the model actually sees minority classes during training
+        # rather than just having higher loss weights
+        
+        if cfg.DATALOADER.SAMPLER_TRAIN == "RepeatFactorTrainingSampler":
+            # Calculate repeat factors based on category frequency
+            # repeat_thresh=0.001 means categories with < 0.1% representation
+            # will be repeated more frequently
+            repeat_factors = RepeatFactorTrainingSampler.repeat_factors_from_category_frequency(
+                dataset_dicts, 
+                repeat_thresh=0.001  # Heavily oversample rare classes
+            )
+            sampler = RepeatFactorTrainingSampler(repeat_factors)
+            
+            print("\n" + "="*60)
+            print("CLASS IMBALANCE HANDLING ENABLED")
+            print("="*60)
+            print(f"Using RepeatFactorTrainingSampler with thresh=0.001")
+            print(f"Rare classes (implant, caries, posts) will be oversampled")
+            print(f"Total repeat factor sum: {sum(repeat_factors):.1f}")
+            print(f"Max repeat factor: {max(repeat_factors):.2f}")
+            print(f"Min repeat factor: {min(repeat_factors):.2f}")
+            print("="*60 + "\n")
+        else:
+            sampler = None  # Use default sampler
+        
+        return build_detection_train_loader(
+            cfg, 
+            mapper=mapper,
+            sampler=sampler,
+            total_batch_size=cfg.SOLVER.IMS_PER_BATCH,
+            aspect_ratio_grouping=cfg.DATALOADER.ASPECT_RATIO_GROUPING,
+            num_workers=cfg.DATALOADER.NUM_WORKERS,
+        )
+    
+    @classmethod
+    def build_evaluator(cls, cfg, dataset_name, output_folder=None):
+        """Build COCO evaluator for validation during training."""
+        if output_folder is None:
+            output_folder = os.path.join(cfg.OUTPUT_DIR, "inference", dataset_name)
+        os.makedirs(output_folder, exist_ok=True)
+        return COCOEvaluator(dataset_name, output_dir=output_folder)
     
     def run_step(self):
         """Override to add wandb logging."""
@@ -83,10 +148,18 @@ def setup(args):
     """Create configs and perform basic setups."""
     cfg = get_cfg()
     
-    # Load base config from model zoo
-    cfg.merge_from_file(model_zoo.get_config_file(
-        "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"
-    ))
+    # Check if config is standalone (has full MODEL definition) or needs base
+    config_content = ""
+    if args.config_file:
+        with open(args.config_file, 'r') as f:
+            config_content = f.read()
+    
+    # Only load model zoo base if config doesn't define META_ARCHITECTURE
+    if "META_ARCHITECTURE" not in config_content:
+        # Load base config from model zoo (for original R50 config)
+        cfg.merge_from_file(model_zoo.get_config_file(
+            "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"
+        ))
     
     # Override with custom config file
     if args.config_file:
@@ -101,12 +174,15 @@ def setup(args):
         from detectron2.data import DatasetCatalog
         if "tooth_train" not in DatasetCatalog.list():
             register_final_di_datasets(args.base_path)
+            register_remapped_datasets()  # Also register 9-class remapped dataset
+            register_merged_datasets()    # Register merged 9-class dataset
     except Exception as e:
         print(f"Warning: Could not register datasets: {e}")
-        print("Make sure data/final-di exists with train/valid/test splits")
+        print("Make sure data/final-di-stratified exists with train/valid/test splits")
     
     cfg.freeze()
     default_setup(cfg, args)
+    return cfg
     return cfg
 
 

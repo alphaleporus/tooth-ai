@@ -1,11 +1,12 @@
 # ============================================
-# Tooth-AI .gitignore - Deployment Ready
+# Tooth-AI .gitignore - Production Ready
 # ============================================
 
 # === VIRTUAL ENVIRONMENTS ===
 venv/
 .venv/
 env/
+.env
 
 # === PYTHON CACHE ===
 __pycache__/
@@ -14,22 +15,33 @@ __pycache__/
 *.pyd
 .Python
 *.so
+*.egg-info/
 
 # === DATASET (Large - 2GB+) ===
 data/
-*.jpg
-*.jpeg
-*.png
-*.bmp
+!data/.gitkeep
 
 # === WANDB LOGS (10GB+) ===
 wandb/
+
+# === OUTPUT CHECKPOINTS ===
+# Exclude all intermediate checkpoints
+output/*/model_0*.pth
+output/*/last_checkpoint
+output/*/events.out.*
+output/inference/
+output/*/instances_predictions.pth
+
+# Keep only final models and configs
+!output/*/model_final.pth
+!output/*/config.yaml
 
 # === TEMPORARY & BACKUP ===
 *.bak
 *.tmp
 *.log
 *.swp
+*~
 
 # === IDE ===
 .vscode/
@@ -44,15 +56,10 @@ Desktop.ini
 # === BUILD ARTIFACTS ===
 build/
 dist/
-*.egg-info/
 
-# === CHECKPOINTS (except final) ===
-# We use Git LFS for model_final.pth
-output/*/model_*.pth
-!output/*/model_final.pth
-output/*/last_checkpoint
-output/*/events.out.*
-output/inference/
+# === JUPYTER ===
+.ipynb_checkpoints/
+*.ipynb
 
 # === ANNOTATIONS BACKUP ===
 *_annotations.coco.json.bak

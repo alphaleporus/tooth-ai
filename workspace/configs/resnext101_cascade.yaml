@@ -1,0 +1,136 @@
+# ============================================
+# HEAVY ResNeXt-101 Config for Teeth Detection
+# Cascade Mask R-CNN + ResNeXt-101-32x8d
+# Target: RTX 4060 (8GB VRAM) - Using ~5-6GB
+# ============================================
+
+MODEL:
+  META_ARCHITECTURE: "GeneralizedRCNN"
+  
+  # Pre-trained weights: ResNeXt-101-32x8d FPN
+  WEIGHTS: "detectron2://COCO-InstanceSegmentation/mask_rcnn_X_101_32x8d_FPN_3x/139653917/model_final_2d9806.pkl"
+  
+  MASK_ON: True
+  PIXEL_MEAN: [103.530, 116.280, 123.675]
+  PIXEL_STD: [1.0, 1.0, 1.0]
+  
+  # Backbone: ResNeXt-101-32x8d FPN (Heavy)
+  BACKBONE:
+    NAME: "build_resnet_fpn_backbone"
+    FREEZE_AT: 2
+  
+  RESNETS:
+    DEPTH: 101
+    NUM_GROUPS: 32          # ResNeXt groups
+    WIDTH_PER_GROUP: 8      # ResNeXt width
+    OUT_FEATURES: ["res2", "res3", "res4", "res5"]
+    STRIDE_IN_1X1: False    # ResNeXt style
+    NORM: "FrozenBN"
+  
+  FPN:
+    IN_FEATURES: ["res2", "res3", "res4", "res5"]
+    OUT_CHANNELS: 256
+  
+  # RPN Configuration
+  RPN:
+    IN_FEATURES: ["p2", "p3", "p4", "p5", "p6"]
+    PRE_NMS_TOPK_TRAIN: 2000
+    PRE_NMS_TOPK_TEST: 1000
+    POST_NMS_TOPK_TRAIN: 1000
+    POST_NMS_TOPK_TEST: 1000
+  
+  # Anchor settings
+  ANCHOR_GENERATOR:
+    SIZES: [[32], [64], [128], [256], [512]]
+    ASPECT_RATIOS: [[0.5, 1.0, 2.0]]
+  
+  # Cascade ROI Heads (3-stage refinement)
+  ROI_HEADS:
+    NAME: "CascadeROIHeads"
+    IN_FEATURES: ["p2", "p3", "p4", "p5"]
+    NUM_CLASSES: 41
+    SCORE_THRESH_TEST: 0.3
+    NMS_THRESH_TEST: 0.5
+    BATCH_SIZE_PER_IMAGE: 512  # High for better class coverage
+    POSITIVE_FRACTION: 0.25
+  
+  # Cascade IoU thresholds
+  ROI_BOX_CASCADE_HEAD:
+    IOUS: [0.5, 0.6, 0.7]
+    
+  ROI_BOX_HEAD:
+    NAME: "FastRCNNConvFCHead"
+    NUM_FC: 2
+    FC_DIM: 1024
+    POOLER_RESOLUTION: 7
+    POOLER_SAMPLING_RATIO: 0
+    POOLER_TYPE: "ROIAlignV2"
+    CLS_AGNOSTIC_BBOX_REG: True
+    
+  ROI_MASK_HEAD:
+    NAME: "MaskRCNNConvUpsampleHead"
+    NUM_CONV: 4
+    CONV_DIM: 256
+    POOLER_RESOLUTION: 14
+    POOLER_SAMPLING_RATIO: 0
+    POOLER_TYPE: "ROIAlignV2"
+
+# ============================================
+# INPUT CONFIGURATION
+# ============================================
+INPUT:
+  MIN_SIZE_TRAIN: (640, 672, 704, 736, 768, 800)  # Larger scales
+  MAX_SIZE_TRAIN: 1333
+  MIN_SIZE_TEST: 800
+  MAX_SIZE_TEST: 1333
+  FORMAT: "BGR"
+
+# ============================================
+# DATASET CONFIGURATION
+# ============================================
+DATASETS:
+  TRAIN: ("tooth_train",)
+  TEST: ("tooth_val",)
+
+# ============================================
+# SOLVER CONFIGURATION
+# ============================================
+SOLVER:
+  IMS_PER_BATCH: 2
+  BASE_LR: 0.0002            # Lower LR for stability
+  MOMENTUM: 0.9
+  WEIGHT_DECAY: 0.0001
+  GAMMA: 0.1
+  STEPS: (40000, 55000)
+  MAX_ITER: 60000            # Slightly shorter due to heavier model
+  WARMUP_ITERS: 1000
+  WARMUP_FACTOR: 0.001
+  WARMUP_METHOD: "linear"
+  CHECKPOINT_PERIOD: 5000
+  
+  # CRITICAL: Enable AMP
+  AMP:
+    ENABLED: true
+
+# ============================================
+# DATALOADER CONFIGURATION
+# ============================================
+DATALOADER:
+  NUM_WORKERS: 2
+  ASPECT_RATIO_GROUPING: True
+  # Use standard sampler (not RepeatFactor)
+  SAMPLER_TRAIN: "TrainingSampler"
+
+# ============================================
+# TEST CONFIGURATION
+# ============================================
+TEST:
+  EVAL_PERIOD: 5000
+  DETECTIONS_PER_IMAGE: 200
+
+# ============================================
+# OUTPUT
+# ============================================
+OUTPUT_DIR: "output/resnext101_cascade_60k"
+
+VERSION: 2

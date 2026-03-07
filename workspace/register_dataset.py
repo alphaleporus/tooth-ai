@@ -11,8 +11,8 @@ from detectron2.data import DatasetCatalog, MetadataCatalog
 from detectron2.data.datasets import register_coco_instances
 from detectron2.utils.logger import setup_logger
 
-# Dataset paths
-DATASET_ROOT = "data/final-di"
+# Dataset paths - Use stratified split for balanced rare class distribution
+DATASET_ROOT = "data/final-di-stratified"
 TRAIN_JSON = os.path.join(DATASET_ROOT, "train", "_annotations.coco.json")
 TRAIN_IMAGES = os.path.join(DATASET_ROOT, "train")
 VAL_JSON = os.path.join(DATASET_ROOT, "valid", "_annotations.coco.json")
@@ -101,6 +101,98 @@ def register_final_di_datasets(base_path: str = None):
         print(f"Registered: {name} ({len(coco['images'])} images, {len(coco['annotations'])} annotations)")
 
 
+# 9-class remapped dataset classes
+REMAPPED_CLASSES = [
+    "Tooth", "Caries", "Crown", "Filling", "Implant",
+    "Prefabricated metal post", "Retained root",
+    "Root canal filling", "Root canal obturation"
+]
+
+
+def register_remapped_datasets(base_path: str = None):
+    """Register the remapped 9-class dataset (Tooth + 8 Anomalies)."""
+    dataset_root = base_path if base_path else "data/final-di-remapped"
+    
+    train_json = os.path.join(dataset_root, "train", "_annotations.coco.json")
+    train_images = os.path.join(dataset_root, "train")
+    val_json = os.path.join(dataset_root, "valid", "_annotations.coco.json")
+    val_images = os.path.join(dataset_root, "valid")
+    test_json = os.path.join(dataset_root, "test", "_annotations.coco.json")
+    test_images = os.path.join(dataset_root, "test")
+    
+    registered = DatasetCatalog.list()
+    
+    datasets = [
+        ("tooth_remapped_train", train_json, train_images),
+        ("tooth_remapped_val", val_json, val_images),
+        ("tooth_remapped_test", test_json, test_images),
+    ]
+    
+    for name, json_path, img_dir in datasets:
+        if name in registered:
+            print(f"'{name}' already registered")
+            continue
+        if not os.path.exists(json_path):
+            print(f"Warning: {json_path} not found")
+            continue
+        
+        register_coco_instances(name, {}, json_path, img_dir)
+        
+        metadata = MetadataCatalog.get(name)
+        metadata.thing_classes = REMAPPED_CLASSES
+        
+        with open(json_path) as f:
+            coco = json.load(f)
+        
+        metadata.thing_dataset_id_to_contiguous_id = {
+            cat['id']: idx for idx, cat in enumerate(coco['categories'])
+        }
+        
+        print(f"Registered: {name} ({len(coco['images'])} images, {len(coco['annotations'])} annotations)")
+
+
+def register_merged_datasets(base_path: str = None):
+    """Register the merged 9-class dataset (Final-DI + NIIHHAA)."""
+    dataset_root = base_path if base_path else "data/merged-9class"
+    
+    train_json = os.path.join(dataset_root, "train", "_annotations.coco.json")
+    train_images = os.path.join(dataset_root, "train")
+    val_json = os.path.join(dataset_root, "valid", "_annotations.coco.json")
+    val_images = os.path.join(dataset_root, "valid")
+    test_json = os.path.join(dataset_root, "test", "_annotations.coco.json")
+    test_images = os.path.join(dataset_root, "test")
+    
+    registered = DatasetCatalog.list()
+    
+    datasets = [
+        ("tooth_merged_train", train_json, train_images),
+        ("tooth_merged_val", val_json, val_images),
+        ("tooth_merged_test", test_json, test_images),
+    ]
+    
+    for name, json_path, img_dir in datasets:
+        if name in registered:
+            print(f"'{name}' already registered")
+            continue
+        if not os.path.exists(json_path):
+            print(f"Warning: {json_path} not found")
+            continue
+        
+        register_coco_instances(name, {}, json_path, img_dir)
+        
+        metadata = MetadataCatalog.get(name)
+        metadata.thing_classes = REMAPPED_CLASSES
+        
+        with open(json_path) as f:
+            coco = json.load(f)
+        
+        metadata.thing_dataset_id_to_contiguous_id = {
+            cat['id']: idx for idx, cat in enumerate(coco['categories'])
+        }
+        
+        print(f"Registered: {name} ({len(coco['images'])} images, {len(coco['annotations'])} annotations)")
+
+
 def verify_dataset():
     """Verify datasets are properly registered."""
     print("\n=== Verification ===")
@@ -118,15 +210,23 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--base-path', default=None)
     parser.add_argument('--verify', action='store_true')
+    parser.add_argument('--remapped', action='store_true', help='Register remapped 9-class dataset')
     args = parser.parse_args()
     
     setup_logger()
-    print(f"Final-DI Dataset ({NUM_CLASSES} classes)")
-    register_final_di_datasets(args.base_path)
+    
+    if args.remapped:
+        print(f"Remapped Dataset (9 classes)")
+        register_remapped_datasets(args.base_path)
+    else:
+        print(f"Final-DI Dataset ({NUM_CLASSES} classes)")
+        register_final_di_datasets(args.base_path)
+    
     if args.verify:
         verify_dataset()
-    print("\nDone! Use 'tooth_train', 'tooth_val', 'tooth_test' in config.")
+    print("\nDone!")
 
 
 if __name__ == '__main__':
     main()
+

@@ -1,0 +1,114 @@
+# ============================================
+# 9-CLASS Config: Tooth + 8 Anomalies
+# ResNeXt-101-32x8d Cascade Mask R-CNN
+# Faster training with simplified classification
+# ============================================
+
+MODEL:
+  META_ARCHITECTURE: "GeneralizedRCNN"
+  
+  # Pre-trained weights: ResNeXt-101-32x8d FPN
+  WEIGHTS: "detectron2://COCO-InstanceSegmentation/mask_rcnn_X_101_32x8d_FPN_3x/139653917/model_final_2d9806.pkl"
+  
+  MASK_ON: True
+  PIXEL_MEAN: [103.530, 116.280, 123.675]
+  PIXEL_STD: [1.0, 1.0, 1.0]
+  
+  # Backbone: ResNeXt-101-32x8d FPN
+  BACKBONE:
+    NAME: "build_resnet_fpn_backbone"
+    FREEZE_AT: 2
+  
+  RESNETS:
+    DEPTH: 101
+    NUM_GROUPS: 32
+    WIDTH_PER_GROUP: 8
+    OUT_FEATURES: ["res2", "res3", "res4", "res5"]
+    STRIDE_IN_1X1: False
+    NORM: "FrozenBN"
+  
+  FPN:
+    IN_FEATURES: ["res2", "res3", "res4", "res5"]
+    OUT_CHANNELS: 256
+  
+  RPN:
+    IN_FEATURES: ["p2", "p3", "p4", "p5", "p6"]
+    PRE_NMS_TOPK_TRAIN: 2000
+    PRE_NMS_TOPK_TEST: 1000
+    POST_NMS_TOPK_TRAIN: 1000
+    POST_NMS_TOPK_TEST: 1000
+  
+  ANCHOR_GENERATOR:
+    SIZES: [[32], [64], [128], [256], [512]]
+    ASPECT_RATIOS: [[0.5, 1.0, 2.0]]
+  
+  # 9 classes: Tooth + 8 Anomalies
+  ROI_HEADS:
+    NAME: "CascadeROIHeads"
+    IN_FEATURES: ["p2", "p3", "p4", "p5"]
+    NUM_CLASSES: 9
+    SCORE_THRESH_TEST: 0.3
+    NMS_THRESH_TEST: 0.5
+    BATCH_SIZE_PER_IMAGE: 512
+    POSITIVE_FRACTION: 0.25
+  
+  ROI_BOX_CASCADE_HEAD:
+    IOUS: [0.5, 0.6, 0.7]
+    
+  ROI_BOX_HEAD:
+    NAME: "FastRCNNConvFCHead"
+    NUM_FC: 2
+    FC_DIM: 1024
+    POOLER_RESOLUTION: 7
+    POOLER_SAMPLING_RATIO: 0
+    POOLER_TYPE: "ROIAlignV2"
+    CLS_AGNOSTIC_BBOX_REG: True
+    
+  ROI_MASK_HEAD:
+    NAME: "MaskRCNNConvUpsampleHead"
+    NUM_CONV: 4
+    CONV_DIM: 256
+    POOLER_RESOLUTION: 14
+    POOLER_SAMPLING_RATIO: 0
+    POOLER_TYPE: "ROIAlignV2"
+
+INPUT:
+  MIN_SIZE_TRAIN: (640, 672, 704, 736, 768, 800)
+  MAX_SIZE_TRAIN: 1333
+  MIN_SIZE_TEST: 800
+  MAX_SIZE_TEST: 1333
+  FORMAT: "BGR"
+
+# Use remapped dataset
+DATASETS:
+  TRAIN: ("tooth_remapped_train",)
+  TEST: ("tooth_remapped_val",)
+
+SOLVER:
+  IMS_PER_BATCH: 4
+  BASE_LR: 0.0005
+  MOMENTUM: 0.9
+  WEIGHT_DECAY: 0.0001
+  GAMMA: 0.1
+  STEPS: (20000, 28000)
+  MAX_ITER: 35000
+  WARMUP_ITERS: 500
+  WARMUP_FACTOR: 0.001
+  WARMUP_METHOD: "linear"
+  CHECKPOINT_PERIOD: 5000
+  
+  AMP:
+    ENABLED: true
+
+DATALOADER:
+  NUM_WORKERS: 2
+  ASPECT_RATIO_GROUPING: True
+  SAMPLER_TRAIN: "TrainingSampler"
+
+TEST:
+  EVAL_PERIOD: 5000
+  DETECTIONS_PER_IMAGE: 200
+
+OUTPUT_DIR: "output/resnext101_9class_40k"
+
+VERSION: 2
